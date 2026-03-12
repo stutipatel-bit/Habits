@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #fdfcf8;
+  --bg-secondary: #f9f6ed;
+  --text-primary: #1a1f1a;
+  --text-secondary: #4a5449;
+  --accent: #62825c;
+  --accent-light: #d1dccf;
+  --border: #e8ede6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth transitions for interactive elements */
+button,
+a {
+  transition: all 0.2s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-light);
+  border-radius: 3px;
+}
+
+/* Habit card stagger animations */
+.habit-card {
+  animation: slideUp 0.4s ease-out forwards;
+  opacity: 0;
+}
+.habit-card:nth-child(1) { animation-delay: 0.05s; }
+.habit-card:nth-child(2) { animation-delay: 0.10s; }
+.habit-card:nth-child(3) { animation-delay: 0.15s; }
+.habit-card:nth-child(4) { animation-delay: 0.20s; }
+.habit-card:nth-child(5) { animation-delay: 0.25s; }
+.habit-card:nth-child(6) { animation-delay: 0.30s; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes streakPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.streak-pop {
+  animation: streakPop 0.4s ease-out;
+}
