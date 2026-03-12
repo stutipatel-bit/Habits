@@ -8,6 +8,7 @@ export default async function Home() {
   if (user) {
     redirect("/dashboard");
   } else {
+    console.log("No user found, redirecting to login");
     redirect("/auth/login");
   }
 }
