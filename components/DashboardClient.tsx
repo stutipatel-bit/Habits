@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import { getTodayDate, getWeekDates, getInitials } from "@/lib/utils";
@@ -29,6 +29,13 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
   const [logs, setLogs] = useState<Record<string, HabitLog[]>>({}); // habitId → logs
   const [showAddModal, setShowAddModal] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
+
+  const headerRef = useRef<HTMLElement>(null);
+  const greetingRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const sectionHeaderRef = useRef<HTMLDivElement>(null);
+  const habitListRef = useRef<HTMLDivElement>(null);
 
   const weekDates = getWeekDates();
   const today = getTodayDate();
@@ -65,6 +72,38 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
+
+  // Scroll animations
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Intersection Observer for progressive reveals
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-in');
+        }
+      });
+    }, observerOptions);
+
+    // Observe elements
+    const elements = [greetingRef.current, progressRef.current, sectionHeaderRef.current, habitListRef.current];
+    elements.forEach(el => el && observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [habits.length]);
 
   // Toggle today's completion for a habit
   async function handleToggleComplete(habitId: string, currentlyCompleted: boolean) {
@@ -150,8 +189,12 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-cream-50/90 backdrop-blur-sm border-b border-sage-100">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-20 bg-cream-50/90 backdrop-blur-sm border-b border-sage-100 parallax-header"
+        style={{ '--scroll-y': `${scrollY}px` } as React.CSSProperties}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-sage-700 rounded-lg flex items-center justify-center">
               <Leaf className="w-3.5 h-3.5 text-cream-50" />
@@ -182,9 +225,9 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Greeting */}
-        <div className="mb-6">
+        <div ref={greetingRef} className="mb-6 scroll-transform" style={{ '--scroll-y': `${scrollY}px` } as React.CSSProperties}>
           <h1 className="font-display text-3xl text-charcoal-800 mb-1">
             Good {getGreeting()},{" "}
             <span className="text-sage-600">{userEmail.split("@")[0]}</span>
@@ -196,14 +239,16 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
 
         {/* Progress summary */}
         {habits.length > 0 && (
-          <ProgressSummary
-            total={habits.length}
-            completed={completedTodayCount}
-          />
+          <div ref={progressRef} className="progress-glow">
+            <ProgressSummary
+              total={habits.length}
+              completed={completedTodayCount}
+            />
+          </div>
         )}
 
         {/* Section header */}
-        <div className="flex items-center justify-between mb-4 mt-8">
+        <div ref={sectionHeaderRef} className="flex items-center justify-between mb-4 mt-8">
           <h2 className="font-body font-semibold text-charcoal-800 text-base">
             Your habits
             {habits.length > 0 && (
@@ -214,7 +259,7 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
           </h2>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-sage-700 hover:bg-sage-800 text-cream-50 font-body text-sm rounded-lg transition-all shadow-sm"
+            className="add-habit-pulse flex items-center gap-1.5 px-3 py-1.5 bg-sage-700 hover:bg-sage-800 text-cream-50 font-body text-sm rounded-lg transition-all shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             Add habit
@@ -227,9 +272,16 @@ export default function DashboardClient({ initialHabits, userEmail, userId }: Pr
         ) : habits.length === 0 ? (
           <EmptyState onAdd={() => setShowAddModal(true)} />
         ) : (
-          <div className="space-y-3">
-            {habits.map((habit) => (
-              <div key={habit.id} className="habit-card">
+          <div ref={habitListRef} className="space-y-2">
+            {habits.map((habit, index) => (
+              <div
+                key={habit.id}
+                className="habit-card floating"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  '--scroll-y': `${scrollY}px`
+                } as React.CSSProperties}
+              >
                 <HabitCard
                   habit={habit}
                   logs={logs[habit.id] ?? []}
